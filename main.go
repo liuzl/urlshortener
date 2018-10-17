@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"net/http"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -13,6 +14,8 @@ import (
 	"github.com/rs/zerolog/hlog"
 )
 
+const LinkPattern = `^(?i)(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w\.-]*)*\/?`
+
 var (
 	addr       = flag.String("addr", ":8080", "bind address")
 	dbDir      = flag.String("db", "./db", "db dir")
@@ -20,6 +23,7 @@ var (
 	onceStore  sync.Once
 	n          uint64 = 10000
 	mu         sync.Mutex
+	linkRegex  = regexp.MustCompile(LinkPattern)
 )
 
 type Record struct {
@@ -53,8 +57,8 @@ func CHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	url := strings.TrimSpace(r.FormValue("url"))
 	ext := strings.TrimSpace(r.FormValue("ext"))
-	if url == "" {
-		rest.MustEncode(w, rest.RestMessage{"error", "url is empty"})
+	if !linkRegex.MatchString(url) {
+		rest.MustEncode(w, rest.RestMessage{"error", "url is invalid"})
 		return
 	}
 	rec := &Record{url, ext}
