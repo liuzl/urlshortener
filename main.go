@@ -124,6 +124,23 @@ func MainHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func InfoHandler(w http.ResponseWriter, r *http.Request) {
+	glog.Infof("addr=%s  method=%s host=%s uri=%s",
+		r.RemoteAddr, r.Method, r.Host, r.RequestURI)
+	r.ParseForm()
+	code := strings.TrimSpace(r.FormValue("code"))
+	if b, err := GetLevelStore().Get(code); err != nil {
+		rest.MustEncode(w, rest.RestMessage{"error", err.Error()})
+	} else {
+		rec := new(Record)
+		if err = store.BytesToObject(b, rec); err != nil {
+			rest.MustEncode(w, rest.RestMessage{"error", err.Error()})
+		} else {
+			rest.MustEncode(w, rest.RestMessage{"ok", rec})
+		}
+	}
+}
+
 func main() {
 	flag.Parse()
 	defer glog.Flush()
@@ -131,6 +148,7 @@ func main() {
 	GetLevelStore()
 	http.Handle("/c/", rest.WithLog(CHandler))
 	http.Handle("/n/", rest.WithLog(NHandler))
+	http.Handle("/i/", rest.WithLog(InfoHandler))
 	http.Handle("/save/", rest.WithLog(SaveHandler))
 	http.Handle("/", rest.WithLog(MainHandler))
 	glog.Info("server listen on", *addr)
