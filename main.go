@@ -119,6 +119,7 @@ func MainHandler(w http.ResponseWriter, r *http.Request) {
 			hlog.FromRequest(r).Info().
 				Str("code", code).Str("url", rec.Url).Str("ext", rec.Ext).
 				Msg("redirect")
+			glog.Infof("code:%s, url:%s, ext:%s", code, rec.Url, rec.Ext)
 			http.Redirect(w, r, rec.Url, 301)
 		}
 	}
